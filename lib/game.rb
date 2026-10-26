@@ -1,29 +1,51 @@
 class Game
-  def initialize(word = Dictionary.random_word)
+  def initialize(word = Dictionary.random_word, correct = [], incorrect = [])
     @word = word
-    @correct_guesses = []
-    @incorrect_guesses = []
+    @correct_guesses = correct
+    @incorrect_guesses = incorrect
   end
 
   def play
-    puts "You have 7 tries to guess the word"
+    puts "\nYou have 7 tries to guess the word"
     while @incorrect_guesses.length < 7
       remaining_tries = 7 - @incorrect_guesses.length
       puts "\nYou have #{remaining_tries} tries left"
 
       display_board(remaining_tries)
 
-      player_turn
+      return false if player_turn
 
       if check_win
         display_win
-        return
+        return true
       end
     end
     display_loss
+    true
+  end
+
+  def self.load_game(file)
+    f = File.new("saves/#{file}")
+    save_data = JSON.parse(f.gets.chomp)
+    new(save_data["word"], save_data["correct_guesses"], save_data["incorrect_guesses"])
   end
 
   private
+
+  def save_and_quit
+    puts "Choose a name to save this game as:"
+    name = gets.chomp.strip.downcase
+
+    Dir.mkdir("saves") unless Dir.exist? "saves"
+
+    json_obj = JSON.dump({
+                           word: @word,
+                           correct_guesses: @correct_guesses,
+                           incorrect_guesses: @incorrect_guesses
+                         })
+
+    File.open("saves/#{name}.json", "w") { |file| file.puts json_obj }
+  end
 
   def display_board(remaining_tries)
     if remaining_tries == 1
@@ -118,16 +140,21 @@ class Game
   end
 
   def player_turn
-    puts "\nguess a letter"
+    puts "\nguess a letter or type \"save\" to save and quit"
     loop do
       letter = gets.chomp.downcase
+      if letter == "save"
+        save_and_quit
+        return true
+      end
+
       if valid_letter?(letter)
         if @word.include?(letter)
           @correct_guesses.push(letter)
         else
           @incorrect_guesses.push(letter)
         end
-        return
+        return false
       end
       puts "Not a letter, try again."
     end
