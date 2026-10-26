@@ -26,8 +26,8 @@ class Game
 
   def self.load_game(file)
     f = File.new("saves/#{file}")
-    save_data = JSON.parse(f.gets.chomp)
-    new(save_data["word"], save_data["correct_guesses"], save_data["incorrect_guesses"])
+    save_data = JSON.parse(f.gets.chomp, symbolize_names: true)
+    new(save_data[:word], save_data[:correct_guesses], save_data[:incorrect_guesses])
   end
 
   private
